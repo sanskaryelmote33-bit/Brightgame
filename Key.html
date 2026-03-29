@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Key Editor</title>
+
+<style>
+body {
+  background:#0f172a;
+  color:white;
+  font-family:Arial;
+  padding:20px;
+}
+.box {
+  max-width:400px;
+  margin:auto;
+  background:#1e293b;
+  padding:20px;
+  border-radius:15px;
+}
+input, button {
+  width:100%;
+  padding:10px;
+  margin-top:10px;
+  border-radius:10px;
+  border:none;
+}
+button {
+  background:#22c55e;
+  font-weight:bold;
+}
+</style>
+</head>
+
+<body>
+
+<div class="box">
+<h2>🎮 Key Editor (Accurate)</h2>
+
+<input type="file" id="file">
+
+<label>Current Value (IMPORTANT)</label>
+<input type="number" id="current" placeholder="e.g. 3">
+
+<label>New Value</label>
+<input type="number" id="newval" placeholder="e.g. 50">
+
+<button onclick="editFile()">Modify & Download</button>
+
+<p id="status"></p>
+</div>
+
+<script>
+function editFile() {
+  let file = document.getElementById("file").files[0];
+  let current = parseInt(document.getElementById("current").value);
+  let newval = parseInt(document.getElementById("newval").value);
+
+  if (!file) return alert("Upload file");
+  if (!current || !newval) return alert("Enter values");
+
+  let reader = new FileReader();
+
+  reader.onload = function(e) {
+    let data = new Uint8Array(e.target.result);
+
+    let oldBytes = [
+      current & 0xFF,
+      (current >> 8) & 0xFF,
+      (current >> 16) & 0xFF,
+      (current >> 24) & 0xFF
+    ];
+
+    let newBytes = [
+      newval & 0xFF,
+      (newval >> 8) & 0xFF,
+      (newval >> 16) & 0xFF,
+      (newval >> 24) & 0xFF
+    ];
+
+    let found = false;
+
+    for (let i = 0; i < data.length - 4; i++) {
+      if (
+        data[i] === oldBytes[0] &&
+        data[i+1] === oldBytes[1] &&
+        data[i+2] === oldBytes[2] &&
+        data[i+3] === oldBytes[3]
+      ) {
+        data[i] = newBytes[0];
+        data[i+1] = newBytes[1];
+        data[i+2] = newBytes[2];
+        data[i+3] = newBytes[3];
+        found = true;
+        break; // 🔥 ONLY FIRST MATCH (important)
+      }
+    }
+
+    if (!found) {
+      document.getElementById("status").innerText = "❌ Value not found";
+      return;
+    }
+
+    let blob = new Blob([data]);
+    let a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "PlayerData_modified.bytes";
+    a.click();
+
+    document.getElementById("status").innerText = "✅ Success!";
+  };
+
+  reader.readAsArrayBuffer(file);
+}
+</script>
+
+</body>
+</html>
